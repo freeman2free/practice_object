@@ -42,11 +42,11 @@ while True:
         for j in record_list:
             record_dict[j[0]] = j[1:]
     # 循环遍历生成的字典的key，如果存在该用户，那么将他的记录读出来并打印
-    i = record_dict.get(f"{user_name}")
+    i = record_dict.get(user_name)
     while i:
-        record_ave = float(record_dict[f"{user_name}"][2]) / float(record_dict[f"{user_name}"][0])
+        record_ave = float(record_dict[user_name][2]) / float(record_dict[user_name][0])
         print("""玩家%s,您已经玩了%s次,最快%s轮猜出答案,平均%.2f轮猜出答案,开始游戏!"""
-              % (user_name, record_dict[f"{user_name}"][0], record_dict[f"{user_name}"][1],
+              % (user_name, record_dict[user_name][0], record_dict[user_name][1],
                  record_ave))
         break
     # 如果不存在该键，则打印新用户
