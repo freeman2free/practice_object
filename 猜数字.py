@@ -102,7 +102,7 @@ while True:
         print("输入错误,默认重新开始")
 
 # 如果退出游戏将本次的统计结果保存在文件中
-with open("game_one_user.txt", mode="a+", encoding="utf-8") as f:
+with open("game_one_user.txt", mode="w+", encoding="utf-8") as f:
     # 循环遍历游戏开始建立的字典的键，如果用户(该键)存在则修改该键的值
     for i in record_dict.keys():
         if user_name in i:
