@@ -124,17 +124,17 @@ def run_game(username):
         # 猜中后用于选择是否继续游戏
         choice = input("继续游戏？(y/n):")
         while True:
-            try:
-                if rule.findall(choice):
-                    run_game(username)
-                elif rule2.findall(choice):
-                    print('再见,欢迎下次来玩')
-                    break
-            except TypeError:
-                print('输入有误,正在退出')
+            if rule.findall(choice):
+                print('继续游戏')
+                break
+            elif rule2.findall(choice):
+                print('再见,欢迎下次来玩')
+                dict_record[username] = [times, total_rounds, min_round, total_rounds / times]  # 新建一条记录
+                return dict_record
+            else:
+                print("输入有误")
                 continue
-        dict_record[username] = [times, total_rounds, min_round, total_rounds / times]  # 新建一条记录
-        return dict_record
+        continue
 
 
 if __name__ == '__main__':
