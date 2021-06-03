@@ -1,114 +1,146 @@
-# 提示用户猜一个数字，把 用户输入的数字A 与 一个程序随机生成的数字B 进行比较，
-# 提示 数字A 大于/小于/等于 数字B。用户可以反复猜 数字B，直到猜中为止
+"""
+高级猜数字
 
-# 增加功能2：程序在用户猜中答案后，输出猜中答案一共猜了多少轮（用户每输入一次计做一轮），并可以反复进行游戏（用户猜中一次后可选择“继续”还是“退出”）完成
+制作交互性强、容错率高的猜数字游戏程序。
 
-# 增加功能3：统计游戏数据：玩家姓名、总游戏次数（玩家每猜中答案算玩了一次游戏）、总游戏轮数（玩家每猜一个数字算玩了一轮游戏）、最快猜中轮数，
-# 并将结果保存在文件中（请大家本次任务都将数据写入 game_one_user.txt 中，以方便老师批改作业）
+要求：
 
-# 增加功能4: 通过 总游戏轮数/总游戏次数 算出一次游戏平均几轮猜中；实现
-# 增加功能5: 通过对比已有最快猜中次数和本轮猜中次数，看本次成绩是否最好成绩，判断是否需要更新最好成绩。实现
-# 增加功能6: 进入游戏时，从文件读取历史游戏记录，并将游戏数据赋值给一个字典 实现
-# 增加功能7: 进入游戏时，输入玩家昵称，按玩家昵称读取之前的游戏数据。结束游戏后，根据玩家昵称，保存玩家的游戏数据到文本 实现
+    1.为猜数字游戏增加记录玩家成绩的功能，包括玩家用户名、玩的次数、平均猜中的轮数、最少猜中的轮数等； 完成
+    2.如果记录里没有玩家输入的用户名，就新建一条记录，否则在原有记录上更新数据； 完成
+    3.一局游戏结束后可选择继续进行新一局游戏（更新答案），或退出游戏 完成
+    4.对玩家输入做检测，判定输入的有效性，并保证程序不会因异常输入而出错； 完成
+    5.从网络上获取每一局的答案，请求地址：https://python666.cn/cls/number/guess/ 完成
+    6.打开文件时，地址使用相对路径 完成
+    (可选)如果记录文件不存在，就自动创建一个文件，避免程序报错跳出
+"""
 
-# 引入随机数模块
-from random import *
+# 导入所需要的库
+import requests
 import re
+import random
+import os
 
 # 设置正则表达式，用于判断用户的输入
 rule = re.compile(r"^[Yy]$")
 rule2 = re.compile(r"^[Nn]$")
 
-# 设置变量，分别用于记录总轮数
-round_all = 0
 
-# 总次数
-count_all = 0
+def get_answer():
+    # 通过网络接口获取答案
+    try:
+        answer = float(requests.get('https://python666.cn/cls/number/guess/').text)
+    except TypeError:
+        # 如果网络出现问题，那么就从随机数中生成一个答案
+        answer = random.randint(1, 100)
+    return answer
 
-# 最快猜中轮数
-min_round = 0
 
-# 设置一个外层循环用于决定是否重新玩游戏
-while True:
-    # 用户输入自己的姓名，用于统计
-    user_name = input("请输入您的姓名:")
-
-    # 读取上次游戏保存的文件,并处理
-    with open("game_one_user.txt", mode="r+") as record:
-        # 使用readlines函数读取文件并将每一行换行符去掉，并再次将每一行分割成列表，再存入大列表中
-        record_list = [i.strip().split() for i in record.readlines()]
-        record_dict = {}
-        # 循环遍历上述生成的列表，按照用户名为键，其余为值的方式存入字典内(值的数据类型为列表)
-        for j in record_list:
-            record_dict[j[0]] = j[1:]
-    # 循环遍历生成的字典的key，如果存在该用户，那么将他的记录读出来并打印
-    i = record_dict.get(user_name)
-    while i:
-        record_ave = float(record_dict[user_name][2]) / float(record_dict[user_name][0])
-        print("""玩家%s,您已经玩了%s次,最快%s轮猜出答案,平均%.2f轮猜出答案,开始游戏!"""
-              % (user_name, record_dict[user_name][0], record_dict[user_name][1],
-                 record_ave))
-        break
-    # 如果不存在该键，则打印新用户
+# 打开存放记录成绩的文件
+def open_record_file():
+    file_name = 'game_one_user.txt'
+    # 判断该文件存不存在，如果存在则使用读取模式
+    if os.path.exists(file_name):
+        option = 'r'
+    # 不存在则使用写入模式
     else:
-        print("新用户,开始游戏!")
+        option = 'w+'
+    with open(file_name, option) as r:
+        record = r.readlines()
+        re_dict = {}
+        for i in record:
+            row = i.split()
+            # 以每行的第一位作为键，其余为值
+            re_dict[row[0]] = row[1:]
+        return re_dict
 
-    # 使用随机数模块，生成1-100间任意一个随机数
-    num_randint = randint(1, 100)
 
-    # 为了统计数据，可以引入一个变量，以方便统计用户玩了几轮（用户每输入一次就算一轮）
-    round_times = 0
-    # 为了统计数据，可以引入一个变量，以方便统计用户玩了几次（用户每猜中一次就算玩了一次）
-    count_times = 0
-
-    # 为了使用户可以反复猜数字，可以使用while循环
+def match_username():
     while True:
-        # 用户输入一个数字
-        user_num = float(input("请输入一个数字"))
-        # 用户每输入一次就算做一轮，累加并重新赋值变量
-        round_times += 1
-        # 将这两行数字进行对比,并产生不同的结果
-        if user_num > num_randint:
-            print("太大了")
-        elif user_num < num_randint:
-            print("太小了")
-        elif user_num == num_randint:
-            print("BINGO")
-            count_times += 1
-            # 显示玩家本次玩了几轮
-            print(f"{user_name},您猜了{round_times}轮")
-            break
+        user_name = input('请输入你的名字(两位及以上中文字母数字下划线，开头不能是数字)：')
+        if re.match(r'[\u4e00-\u9fa5a-zA-Z_]\w+', user_name):
+            return user_name
+        else:
+            print('用户名格式有误，请重新输入')
+            continue
 
-    # 判断最快猜中的轮数，如果是第一次玩或者本次轮数小于最快轮数，便将本次轮数赋值给最快轮数变量，否则不变
-    if count_all == 0 or round_times < min_round:
-        min_round = round_times
-    # 将本次的轮数累加到总轮数上
-    round_all += round_times
-    # 将本次游戏累加到总游戏次数上
-    count_all += count_times
-    # 平均多少轮猜中(总轮数除以总次数)
-    round_ave = round_all / count_all
-    print("%s,您已经玩了%d次,最快%d轮猜出答案,平均%.1f轮猜出答案" % (user_name, count_all, min_round, round_ave))
 
-    # 判断是否退出
-    quit_input = input("继续?y/n:")
-    # 使用正则判断用户的输入
-    if rule.findall(quit_input):
-        continue
-    elif rule2.findall(quit_input):
-        # 输入q就退出该循环
-        break
+# 写入纪录
+def write_file(dict_data):
+    with open('game_one_user.txt', 'w+') as f:
+        for i in dict_data:
+            # 将传入的数据转换数据类型
+            dict_data[i] = [str(dict_data[i][0]), str(dict_data[i][1]), str(dict_data[i][2]), str(dict_data[i][3])]
+            line = i + ' ' + ' '.join(dict_data.get(i)) + '\n'
+            f.write(line)
+
+
+def run_game(username):
+    dict_record = open_record_file()  # 读取记录文件
+    data = dict_record.get(username)  # 获取值
+
+    if data:  # 如果data存在那么就读取
+        times = int(data[0])  # 总次数
+        total_rounds = int(data[1])  # 总轮数
+        min_round = int(data[2])  # 最少的轮数
+        avg_round = float(data[3])  # 平均几轮猜中
+    else:  # 否则置为0
+        times = 0
+        min_round = 0
+        total_rounds = 0
+    if times == 0:
+        avg_round = 0
     else:
-        print("输入错误,默认重新开始")
+        avg_round = total_rounds / times
+    print('%s,你已经玩了%d次，总共玩了%d轮，最快%d轮猜出答案，平均%.2f轮猜出答案，开始游戏！' % (username, times, total_rounds, min_round, avg_round))
+    while True:
+        answer = get_answer()
+        times += 1
+        # 该变量用于记录一次游戏的轮数
+        this_round = 0
+        while True:
+            total_rounds += 1
+            this_round += 1
+            # 对用户的输入进行排查防止出错，如果正确则开始游戏，否则重新输入
+            try:
+                user_input = float(input("请输入您所猜的数字(1-100):"))
+            except Exception:
+                print("输入有误，重新输入")
+                continue
+            if user_input > answer:
+                print("太大了")
+                continue
+            elif user_input < answer:
+                print("太小了")
+                continue
+            elif user_input == answer:
+                print(f"Bingo!总共玩了{total_rounds}轮")
+                break
+        # 执行一个判断用于给最快轮数赋值
+        if min_round == 0 or min_round >= total_rounds:
+            min_round = total_rounds
+        elif this_round < min_round:
+            min_round = this_round
+        print('%s,你已经玩了%d次，最快%d轮猜出答案，平均%.2f轮猜出答案' % (username, times, min_round, total_rounds / times))
+        # 猜中后用于选择是否继续游戏
+        choice = input("继续游戏？(y/n):")
+        while True:
+            try:
+                if rule.findall(choice):
+                    run_game(username)
+                elif rule2.findall(choice):
+                    print('再见,欢迎下次来玩')
+                    break
+            except TypeError:
+                print('输入有误,正在退出')
+                continue
+        dict_record[username] = [times, total_rounds, min_round, total_rounds / times]  # 新建一条记录
+        return dict_record
 
-# 如果退出游戏将本次的统计结果保存在文件中
-with open("game_one_user.txt", mode="w+", encoding="utf-8") as f:
-    # 循环遍历游戏开始建立的字典的键，如果用户(该键)存在则修改该键的值
-    for i in record_dict.keys():
-        if user_name in i:
-            record_dict[i] = [str(count_all), str(min_round), str(round_all)]
-            # 之后将修改后的值按照用户名 总次数 最快轮数 总轮数(换行)写入文件内
-            f.writelines([f"{user_name} {' '.join(record_dict[i])} \n"])
-            break
-    else:
-        f.writelines([f"{user_name} {count_all} {min_round} {round_all} \n"])
+
+if __name__ == '__main__':
+    # 获取用户名
+    name = match_username()
+    # 开始游戏
+    data = run_game(name)
+    # 写入记录
+    write_file(data)
